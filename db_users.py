@@ -26,6 +26,8 @@ def _create_user_item(e):
     item.qa_group = e[6]
     item.is_locked = bool(e[7])
     item.pubkey = e[8]
+    if e[9]:
+        item.vendor_ids = e[9].split(',')
     return item
 
 class LvfsUser(object):
@@ -40,6 +42,7 @@ class LvfsUser(object):
         self.qa_group = None
         self.is_locked = False
         self.pubkey = None
+        self.vendor_ids = []
 
     @property
     def is_authenticated(self):
@@ -163,7 +166,7 @@ class LvfsDatabaseUsers(object):
         try:
             cur = self._db.cursor()
             cur.execute("SELECT username, display_name, email, password, "
-                        "is_enabled, is_qa, qa_group, is_locked, pubkey FROM users;")
+                        "is_enabled, is_qa, qa_group, is_locked, pubkey, vendor_ids FROM users;")
         except mdb.Error as e:
             raise CursorError(cur, e)
         res = cur.fetchall()
@@ -181,12 +184,13 @@ class LvfsDatabaseUsers(object):
             cur = self._db.cursor()
             if password:
                 cur.execute("SELECT username, display_name, email, password, "
-                            "is_enabled, is_qa, qa_group, is_locked, pubkey FROM users "
+                            "is_enabled, is_qa, qa_group, is_locked, pubkey, vendor_ids FROM users "
                             "WHERE username = %s AND password = %s LIMIT 1;",
                             (username, password,))
             else:
+#                cur.execute("ALTER TABLE users ADD vendor_ids VARCHAR(4096) DEFAULT NULL")
                 cur.execute("SELECT username, display_name, email, password, "
-                            "is_enabled, is_qa, qa_group, is_locked, pubkey FROM users "
+                            "is_enabled, is_qa, qa_group, is_locked, pubkey, vendor_ids FROM users "
                             "WHERE username = %s LIMIT 1;",
                             (username,))
         except mdb.Error as e:

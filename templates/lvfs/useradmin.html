@@ -32,6 +32,10 @@
     <th class="upload">Contact Email:</th>
     <td><input type="text" name="email" value="{{u.email}}" required></td>
   </tr>
+  <tr>
+    <th class="upload">Restricted to Vendor IDs<br/>(optional, separate with comma):</th>
+    <td><input type="text" name="vendor_ids" value="{{','.join(u.vendor_ids)}}"></td>
+  </tr>
 {% if u.username != 'admin' %}
   <tr>
     <th class="upload">GPG Public Key<br/>(optional):</th>

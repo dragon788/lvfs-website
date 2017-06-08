@@ -12,11 +12,13 @@ import appstream
 from util import _qa_hash, _upload_to_cdn, create_affidavit
 from db import LvfsDatabase
 from db_firmware import LvfsDatabaseFirmware
+from db_users import LvfsDatabaseUsers
 from flask import current_app as app
 
 def _generate_metadata_kind(filename, targets=None, qa_group=None, affidavit=None):
     """ Generates AppStream metadata of a specific kind """
     db = LvfsDatabase(os.environ)
+    db_users = LvfsDatabaseUsers(db)
     db_firmware = LvfsDatabaseFirmware(db)
     items = db_firmware.get_items()
     store = appstream.Store('lvfs')
@@ -90,6 +92,19 @@ def _generate_metadata_kind(filename, targets=None, qa_group=None, affidavit=Non
                     im.url = md.screenshot_url
                     ss.add_image(im)
                 component.add_screenshot(ss)
+
+            # add requires for each allowed vendor_ids
+            user_item = db_users.get_item(item.qa_group)
+            if user_item.vendor_ids:
+                req = appstream.Require()
+                req.kind = 'firmware'
+                req.value = 'vendor-id'
+                if len(user_item.vendor_ids) == 1:
+                    req.compare = 'eq'
+                else:
+                    req.compare = 'regex'
+                req.version = '|'.join(user_item.vendor_ids)
+                component.add_require(req)
 
             # add component
             store.add(component)

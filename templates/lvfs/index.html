@@ -11,6 +11,25 @@
   There is no charge to vendors for the hosting or distribution of content.
 </p>
 
+{% if vendor_ids|length > 0 %}
+<h2>Restrictions</h2>
+<p>
+  Due to the sensitive nature of providing firmware files we ensure that only
+  vendors can install firmware on their own devices.
+  You are currently limited to providing firmware with the vendor IDs of:
+</p>
+<ul>
+{% for vendor_id in vendor_ids %}
+<li><code>{{vendor_id}}</code></li>
+{% endfor %}
+</ul>
+<p>
+  If you need to add another vendor ID then please
+  <a href="https://github.com/hughsie/lvfs-website/issues">file an issue</a>
+  with further information.
+</p>
+{% endif %}
+
 <h2>Add New Firmware</h2>
 <p>By uploading a firmware file you must agree that:</p>
 <ul>

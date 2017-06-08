@@ -183,8 +183,13 @@ def index():
     """
     if 'username' not in session:
         return redirect(url_for('.login'))
-
-    return render_template('index.html')
+    try:
+        db = LvfsDatabase(os.environ)
+        db_users = LvfsDatabaseUsers(db)
+        item = db_users.get_item(session['username'])
+    except CursorError as e:
+        return error_internal(str(e))
+    return render_template('index.html', vendor_ids=item.vendor_ids)
 
 @lvfs.route('/newaccount')
 def new_account():
@@ -420,6 +425,12 @@ def upload():
                 for old_guid in md.guids:
                     if not old_guid in new_guids:
                         return error_internal("Firmware %s dropped a GUID previously supported %s" % (md.cid, old_guid), 422)
+
+        # check the file didn't try to add it's own <require> on vendor-id
+        # to work around the vendor-id security checks in fwupd
+        req = component.get_require_by_kind('firmware', 'vendor-id')
+        if req:
+            return error_internal("Firmware cannot specify vendor-id", 422)
 
         # add to array
         apps.append(component)
@@ -1123,6 +1134,7 @@ def user_modify_by_admin(username):
     for key in ['qa_group',
                 'display_name',
                 'email',
+                'vendor_ids',
                 'password',
                 'is_enabled',
                 'is_qa',
@@ -1239,6 +1251,23 @@ def user_delete(username):
     _event_log("Deleted user %s" % username)
     flash('Deleted user')
     return redirect(url_for('.userlist')), 201
+
+@lvfs.route('/schema_upgrade')
+@login_required
+def schema_upgrade():
+    """ Upgrade the SQL schema """
+
+    # security check
+    if session['username'] != 'admin':
+        return error_permission_denied('Unable to upgrade schema as not admin')
+    try:
+        db = LvfsDatabase(os.environ)
+        db_users = LvfsDatabaseUsers(db)
+        exists = db_users.upgrade_schema()
+    except CursorError as e:
+        return error_internal(str(e))
+    flash('Upgraded database schema')
+    return redirect(url_for('.index'))
 
 @lvfs.route('/userlist')
 @login_required
